@@ -1,0 +1,310 @@
+plugins {
+
+    id 'org.springframework.boot' version '2.2.4.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'java'
+    id 'application'
+    id 'idea'
+    id "org.beryx.jlink" version "2.21.0"
+}
+
+group 'com.example'
+version '1.0.0'
+
+ext {
+    moduleName = 'javafxspring'
+    javaMainClass = 'com.example.javafx.JavaFxSpringApp'
+    javafxversion = '14'
+    javafxmodules = 'javafx.controls,javafx.fxml,javafx.graphics' // no spaces  between
+    platform=getOsName()
+    // JLink and JPackage
+    appModuleName = moduleName
+    appImageName = 'SpringBootJavaFx'
+    appInstallerName = 'SpringBootJavaFx'
+    // Testing
+    jupiterVersion = '5.5.1'
+    junitLauncherVersion = '1.5.1'
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+application {
+    mainModule = moduleName // name defined in module-info.java
+    mainClass = javaMainClass
+    mainClassName = javaMainClass
+}
+
+java {
+    modularity.inferModulePath = true
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+configurations {
+    springFactoriesHolder { transitive = false }
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+
+// ===============
+// Jar Task - activated by the Spring Boot Plugin
+
+jar {
+    enabled = true
+
+    manifest {
+        attributes 'Implementation-Title': 'Java Fx Spring Boot Starter',
+                'Implementation-Version': project.version,
+                'Main-Class': javaMainClass
+    }
+}
+
+// ===============
+// Dependencies
+
+println "FX version and platform =  $javafxversion:$platform"
+
+dependencies {
+
+    springFactoriesHolder 'org.springframework.boot:spring-boot-actuator-autoconfigure'
+    springFactoriesHolder 'org.springframework.boot:spring-boot-autoconfigure'
+    springFactoriesHolder 'org.springframework.boot:spring-boot'
+    implementation 'javax.servlet:javax.servlet-api:4.0.1'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation("org.openjfx:javafx-fxml:$javafxversion:$platform")
+    implementation("org.openjfx:javafx-base:$javafxversion:$platform")
+    implementation("org.openjfx:javafx-graphics:$javafxversion:$platform")
+    implementation("org.openjfx:javafx-controls:$javafxversion:$platform")
+    // implementation group: 'com.sun.activation', name: 'jakarta.activation', version: '1.2.2'
+
+    implementation 'com.h2database:h2'
+
+}
+
+
+
+// =================
+// Testing
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
+
+dependencies {
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$jupiterVersion"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$jupiterVersion"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:$junitLauncherVersion"
+
+    // testImplementation('org.springframework.boot:spring-boot-starter-test') {
+    //     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    // }
+    testImplementation 'org.springframework:spring-test'
+    testImplementation 'org.springframework.boot:spring-boot-test'
+    testImplementation 'org.springframework.boot:spring-boot-test-autoconfigure'
+    testImplementation 'io.projectreactor:reactor-test'
+}
+
+
+// ==================
+// Deploying
+// populate spring.factories
+prepareMergedJarsDir.doLast {
+    // extract and merge META-INF/spring.factories from springFactoriesHolder
+    def factories = configurations.springFactoriesHolder.files.collect {
+        def props = new Properties()
+        props.load(zipTree(it).matching { include 'META-INF/spring.factories' }.singleFile.newInputStream())
+        props
+    }
+    def mergedProps = new Properties()
+    factories.each { props ->
+        props.each { key, value ->
+            def oldVal = mergedProps[key]
+            mergedProps[key] = oldVal ? "$oldVal,$value" : value
+        }
+    }
+    def content = mergedProps.collect { key, value ->
+        def v = (value as String).replace(',', ',\\\n')
+        "$key=$v"
+    }.join('\n\n')
+    mkdir("$jlinkBasePath/META-INF")
+    new File("$jlinkBasePath/META-INF/spring.factories").text = content
+
+    // insert META-INF/spring.factories into the main jar
+    ant.zip(update: "true", destfile: jar.archivePath, keepcompression: true) {
+        fileset(dir: "$jlinkBasePath", includes: 'META-INF/**')
+    }
+}
+
+// configure jlink and jpackage
+jlink {
+    options = ['--bind-services', '--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    launcher {
+        name = 'launcher'
+        customImage {
+            appModules = ['com.example.merged.module']
+        }
+        appModuleName = project.findProperty('appModuleName')
+
+        jvmArgs = [
+                '--add-reads', "com.example.merged.module=$appModuleName",
+                '--add-opens', 'java.base/java.lang=com.example.merged.module',
+                '--add-opens', 'java.base/java.io=com.example.merged.module',
+                '-cp', 'config/',
+        ]
+    }
+    mergedModule {
+        additive = true
+        uses 'ch.qos.logback.classic.spi.Configurator'
+        uses 'javax.xml.bind.JAXBContextFactory'
+        uses 'org.hibernate.integrator.spi.Integrator'
+        uses 'org.hibernate.boot.registry.selector.StrategyRegistrationProvider'
+        uses 'org.hibernate.service.spi.ServiceContributor'
+        uses 'org.hibernate.boot.spi.MetadataSourcesContributor'
+        uses 'org.hibernate.boot.spi.MetadataBuilderInitializer'
+        uses 'org.hibernate.boot.spi.MetadataBuilderFactory'
+        uses 'org.hibernate.boot.model.TypeContributor'
+        uses 'org.hibernate.boot.spi.MetadataContributor'
+        uses 'org.hibernate.boot.spi.AdditionalJaxbMappingProducer'
+        uses 'org.hibernate.boot.spi.SessionFactoryBuilderFactory'
+        uses 'org.hibernate.service.spi.SessionFactoryServiceContributor'
+
+        excludeRequires 'com.fasterxml.jackson.module.paramnames'
+        excludeProvides implementation: 'com.sun.xml.bind.v2.ContextFactory'
+        excludeProvides servicePattern: 'javax.enterprise.*'
+        excludeProvides servicePattern: 'javax.enterprise.inject.*'
+        excludeProvides service: 'org.apache.logging.log4j.spi.Provider'
+    }
+
+    // we will pass this from the command line
+    // (example: ./gradlew --info -PinstallerType=pkg clean jpackage)
+    // options: msi, pkg, dmg, deb, rpm
+    jpackage {
+        installerOptions = [
+                '--description', '"Show Case for Spring Boot, Java FX, Gradle and badass-jlink-plugin"',
+                '--copyright', '"Copyright 2015-2019 Example GmbH (c)2020"',
+                '--vendor', '"COM Example, Example Street 1, CH-xxxx Example"',
+        ]
+        imageOptions = []
+        appVersion = version
+        imageName = project.findProperty('appImageName')
+        installerName = project.findProperty('appInstallerName')
+        installerType = project.findProperty('installerType')
+
+        if (installerType in ['pkg', 'dmg', 'msi', 'deb', 'rpm']) {
+            println()
+            println("************************* Building an installer with Jpackage $installerType ********************************** ")
+            println("appVersion=$appVersion, appImageName=$appImageName, appInstallerName=$appInstallerName, appModuleName=$appModuleName")
+        }
+        if (installerType == 'msi') {
+            installerOptions += ['--resource-dir', "src/main/resources/setup/win/win-setup-resources"]
+            imageOptions += ['--icon', 'src/main/resources/setup/win/icon.ico']
+            installerOptions += [
+                    '--win-per-user-install', '--win-dir-chooser',
+                    '--win-menu', '--win-shortcut'
+            ]
+        }
+        if (installerType in ['pkg', 'dmg']) {
+            println('***** Build Mac with  ****** ')
+            installerOptions += ['--resource-dir', 'src/main/resources/setup/mac/mac-setup-resources']
+            imageOptions += ['--icon', 'src/main/resources/setup/mac/launcher.icns']
+        }
+        if (installerType in ['deb', 'rpm']) {
+            println('***** Build Linux with  ****** ')
+            imageOptions += ['--icon', 'src/main/resources/setup/linux/icon_256x256.png']
+            installerOptions += [
+                    '--linux-menu-group', 'Office',
+                    '--linux-shortcut'
+            ]
+        }
+        if (installerType == 'deb') {
+            installerOptions += ['--resource-dir', 'src/main/resources/setup/linux/linux-deb-setup-resources']
+            installerOptions += [
+                    '--linux-deb-maintainer', 'example@example.com'
+            ]
+        }
+        if (installerType == 'rpm') {
+            installerOptions += ['--resource-dir', 'src/main/resources/setup/linux/linux-rpm-setup-resources']
+            installerOptions += [
+                    '--linux-rpm-license-type', 'GPLv3'
+            ]
+        }
+    }
+
+    forceMerge('jackson', 'byte-buddy')
+}
+
+jpackage {
+    doFirst {
+        project.getProperty('installerType') // throws exception if its missing
+    }
+}
+
+processResources {
+    from('resources') { into 'resources' }
+}
+tasks.jlink.doLast {
+    // Spring performs its magic by scanning the classpath, but in a modular application the classpath is replaced by the module-path.
+    // To circumvent this problem, we copy all resources into the 'config' directory and set this directory as classpath.
+    copy {
+        from "src/main/resources"
+        into "$imageDir.asFile/bin/config"
+    }
+
+    // Spring also needs to read the .class files, therefore they should be accessible via classpath.
+    // Note: These .class files are only used as resources, they will not be loaded by a classloader.
+    copy {
+        from "$buildDir/classes/java/main"
+        into "$imageDir.asFile/bin/config"
+    }
+}
+
+// Hack to put resource files to build/classes/java/main -> make IntelliJ run as work
+sourceSets.main.output.resourcesDir = sourceSets.main.java.outputDir
+
+static def getOsName() {
+    final String osName = System.getProperty("os.name").toLowerCase()
+
+    if (osName.contains("linux")) {
+        return ("linux")
+    } else if (osName.contains("mac os x") || osName.contains("darwin") || osName.contains("osx")) {
+        return ("mac")
+    } else if (osName.contains("windows")) {
+        return ("win")
+    }
+    return ("linux")
+}
+
+// ==================
+// compiling: put classpath to module path
+compileJava {
+    options.encoding = 'UTF-8'
+    inputs.property("moduleName", moduleName)
+    doFirst {
+        options.compilerArgs = [
+                '--module-path', classpath.asPath,
+        ]
+        classpath = files()
+    }
+}
+
+compileTestJava {
+    inputs.property("moduleName", moduleName)
+    doFirst {
+        options.compilerArgs = [
+                '--module-path', classpath.asPath,
+                '--add-modules', "javafxspring,org.junit.jupiter.api,org.junit.platform.commons,$javafxmodules",
+                '--add-reads', "$moduleName=org.junit.jupiter.api",
+                '--add-reads', "$moduleName=org.junit.platform.commons",
+                '--patch-module', "$moduleName=" + files(sourceSets.test.java.srcDirs).asPath,
+        ]
+        classpath = files()
+    }
+}
+
