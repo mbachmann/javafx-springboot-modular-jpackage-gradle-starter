@@ -196,6 +196,7 @@ jlink {
         imageName = project.findProperty('appImageName')
         installerName = project.findProperty('appInstallerName')
         installerType = project.findProperty('installerType')
+        // image Options resourceDir:null,targetPlatformName:null,
 
         if (installerType in ['pkg', 'dmg', 'msi', 'deb', 'rpm']) {
             println()
@@ -204,7 +205,7 @@ jlink {
         }
         if (installerType == 'msi') {
             installerOptions += ['--resource-dir', "src/main/resources/setup/win/win-setup-resources"]
-            imageOptions += ['--icon', 'src/main/resources/setup/win/icon.ico']
+            imageOptions += ['--icon', 'src/main/resources/setup/win/launcher.ico']
             installerOptions += [
                     '--win-per-user-install', '--win-dir-chooser',
                     '--win-menu', '--win-shortcut'
