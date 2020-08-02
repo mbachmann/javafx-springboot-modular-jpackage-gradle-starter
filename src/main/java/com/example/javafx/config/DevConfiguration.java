@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Profile;
  * Defines a Bean for the DatabaseBootstrap
  */
 @Configuration
-@Profile("dev")
 public class DevConfiguration {
 
     @Bean
