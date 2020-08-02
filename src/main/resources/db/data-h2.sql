@@ -1,3 +1,4 @@
+
 insert into project (name, description) values('Project A', 'Description Project A');
 insert into project (name, description) values('Project B', 'Description Project B');
 insert into project (name, description) values('Project C', 'Description Project C');
