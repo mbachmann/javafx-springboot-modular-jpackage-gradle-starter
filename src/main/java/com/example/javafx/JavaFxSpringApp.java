@@ -10,7 +10,7 @@ public class JavaFxSpringApp {
 	public static void main(String[] args) {
 
 		System.out.println("** Java App Starting ** ");
-
+		System.setProperty("prism.lcdtext", "false");
 		Application.launch(JavaFxApp.class, args);
 	}
 }

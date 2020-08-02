@@ -14,6 +14,7 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 import java.net.URL;
@@ -24,6 +25,9 @@ public class JavaFxStageInitializer implements ApplicationListener<StageReadyEve
 
     private static final Logger logger = LoggerFactory.getLogger(JavaFxApp.class);
 
+    @Value("${app.ui.title:Example App}")
+
+    private String windowTitle;
     ProjectService projectService;
     ProjectsView projectsView;
     TestService testService;
@@ -36,7 +40,6 @@ public class JavaFxStageInitializer implements ApplicationListener<StageReadyEve
         this.projectService = projectService;
         this.projectsView = projectsView;
         this.testService = testService;
-
     }
 
     @Override
@@ -45,11 +48,17 @@ public class JavaFxStageInitializer implements ApplicationListener<StageReadyEve
         logger.info("** Java App Read CSS ** " + testService.testMethod());
 
         Stage stage = event.getStage();
-        stage.setScene(initLocalScene());
+        stage.setResizable(true);
+        stage.centerOnScreen();
+        stage.setScene(initProjectview());
         stage.show();
     }
 
-    private Scene initLocalScene() {
+    /**
+     * Testing a simple Dialog
+     * @return
+     */
+    private Scene initLocalTestScene() {
         List<Project> projects = projectService.findAllProjects();
 
         StringBuilder stringBuilder = new StringBuilder();
@@ -74,5 +83,9 @@ public class JavaFxStageInitializer implements ApplicationListener<StageReadyEve
         URL url = getClass().getResource("styles.css");
         scene.getStylesheets().add(url.toExternalForm());
         return scene;
+    }
+
+    private Scene initProjectview () {
+        return new Scene(projectsView.getView());
     }
 }
