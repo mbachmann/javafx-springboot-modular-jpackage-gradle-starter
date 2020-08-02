@@ -105,15 +105,20 @@ java -jar build/libs/*.jar
 
 ## Features of the Starter App
 
+The idea and a part of the projects-view was taken from the repository:
+https://github.com/thomasdarimont/spring-labs/tree/master/spring-boot-javafx-jpa-demo.
+
 The starter app is using an H2 embedded memory database. The database setup can be found in the file
 `src/main/resources/application.properties`. The app is running under spring-boot `dev` profile.
 The dev-Profile triggers a `DataBaseBootstrap` in the config folder. The database schema and the
 initial data is loaded from the files `schema.sql` und `data.sql` in the resources folder.
 
 The app is using two entities: Project and Task. The entities are persisted in the database.
+The Project-Repository contains two additional methods for eagerly loading the related tasks
+to each project.
 
 ### Logging
-The app is creating a folder javafxspring in the user home directory.  
+The app is creating a folder javafxspring in the user home directory.
 Within this folder is a log folder where the console logs can be reviewed.
 The logging can be configures through the file `logback-spring.xml` in the resources folder.
 If no logging file is required, just remove the rolling file appender:
