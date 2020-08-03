@@ -80,7 +80,17 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'com.fasterxml.jackson.module:jackson-module-jaxb-annotations'
+
     implementation 'mysql:mysql-connector-java'
+    implementation('org.liquibase:liquibase-core:3.8.0') {
+        //exclude group: 'javax.xml.bind', module: 'jaxb-api'
+    }
+    // runtimeOnly('org.liquibase.ext:liquibase-hibernate5:3.6') {
+    //    exclude group: 'jakarta.activation', module: 'jakarta.activation-api'
+    //}
+    // implementation group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '2.3.2'
+
     implementation("org.openjfx:javafx-fxml:$javafxversion:$platform")
     implementation("org.openjfx:javafx-base:$javafxversion:$platform")
     implementation("org.openjfx:javafx-graphics:$javafxversion:$platform")
@@ -246,7 +256,7 @@ jlink {
         }
     }
 
-    forceMerge('jackson', 'byte-buddy')
+    forceMerge('jackson', 'log4j','byte-buddy', 'liquibase', 'jaxb', 'mysql', 'istack', 'stax')
 }
 
 jpackage {
@@ -298,6 +308,8 @@ compileJava {
     doFirst {
         options.compilerArgs = [
                 '--module-path', classpath.asPath,
+                '--add-modules', "liquibase.core",
+                '--patch-module', "$moduleName=" + files(sourceSets.main.resources.srcDirs).asPath,
         ]
         classpath = files()
     }
@@ -316,4 +328,5 @@ compileTestJava {
         classpath = files()
     }
 }
+
 
