@@ -191,8 +191,15 @@ The packaging through the badass-jlink-plugin uses the following tasks:
 - jpackageImage
 - jpackage
 
+The resulting pkg file can be found under the folder build/jpackage.
 
-The resulting file can be found under the folder build/jpackage.
+![pkg-icon](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/mac/pkg-icon.png)
+
+The installer finally puts the app to the MAC applications folder:
+
+![pkg-installer](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/mac/pkg-installer.png)
+
+The resulting dmg file can be found under the folder build/jpackage.
 
 ![dmg-in-JPackage.jpg](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/mac/dmg-in-JPackage.jpg)
 
@@ -222,7 +229,7 @@ the `JPackage installerOptions` (`build.gradle`) the install path will be:
  gradlew  -PinstallerType=exe clean jpackage 
 ```
 <br>
-The resulting file can be found under build/JPackage.
+The resulting exe or msi file can be found under build/jpackage.
 
 ![windows-jpackage-structure](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/win/windows-jpackage-structure.png)
 
