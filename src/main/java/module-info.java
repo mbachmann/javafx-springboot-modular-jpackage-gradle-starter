@@ -1,4 +1,4 @@
-module javafxspring {
+open module javafxspring {
 
     requires java.base;
     requires java.persistence;
@@ -8,12 +8,16 @@ module javafxspring {
     requires java.transaction;
     requires java.annotation;
     requires java.instrument;
+    requires java.naming;
+    requires java.logging;
+
     requires jakarta.activation;
 
     requires javafx.fxml;
     requires javafx.controls;
     requires javafx.graphics;
 
+    requires spring.jdbc;
     requires spring.core;
     requires spring.beans;
     requires spring.context;
@@ -36,8 +40,10 @@ module javafxspring {
     requires com.fasterxml.classmate;
     requires com.fasterxml.jackson.annotation;
     requires com.fasterxml.jackson.databind;
+
     requires org.slf4j;
 
+/*
     opens com.example.javafx;
     opens com.example.javafx.domain;
     opens com.example.javafx.repository;
@@ -45,6 +51,9 @@ module javafxspring {
     opens com.example.javafx.service;
     opens com.example.javafx.service.impl;
     opens com.example.javafx.ui;
+    opens db;
+    opens db.changelog;
+    opens db.changelog.v01;
 
     exports com.example.javafx;
     exports com.example.javafx.domain;
@@ -53,8 +62,7 @@ module javafxspring {
     exports com.example.javafx.service;
     exports com.example.javafx.service.impl;
     exports com.example.javafx.ui;
-
-    requires java.logging;
+*/
 
 
 }
