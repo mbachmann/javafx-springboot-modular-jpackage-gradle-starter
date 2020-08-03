@@ -6,6 +6,8 @@ git clone https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle
 Starter project as a show case on how to integrate javafx with springboot and the badass-jlink-plugin.
 JPackage is producing installers for the different platforms.
 
+![splash-screen](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/app/splash-screen.png)
+
 This starter project has been created with:
 
 - IntelliJ 2020.1
@@ -14,6 +16,7 @@ This starter project has been created with:
 - Java FX14
 - JDK14 with JPackage (on Win10 with https://wixtoolset.org/)
 - JDK11 Target version
+
 
 ## Configure the Project
 
@@ -108,14 +111,36 @@ java -jar build/libs/*.jar
 The idea and a part of the projects-view was taken from the repository:
 https://github.com/thomasdarimont/spring-labs/tree/master/spring-boot-javafx-jpa-demo.
 
-The starter app is using an H2 embedded memory database. The database setup can be found in the file
-`src/main/resources/application.properties`. The app is running under spring-boot `dev` profile.
-The dev-Profile triggers a `DataBaseBootstrap` in the config folder. The database schema and the
-initial data is loaded from the files `schema.sql` und `data.sql` in the resources folder.
+![main-view](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/app/main-view.png)
 
 The app is using two entities: Project and Task. The entities are persisted in the database.
 The Project-Repository contains two additional methods for eagerly loading the related tasks
 to each project.
+
+### Profiles and Database Options
+
+The starter app is using an `H2 embedded memory` or `mysql database`.
+The database setup can be found in the folder `src/main/resources/`:
+
+| property file                          | profile         | database  | migration                          |
+|:---------------------------------------|:----------------|:----------|:-----------------------------------|
+| application-dev.properties             |  dev            | H2-Memory |db/schema-h2.sql and db/data-h2.sql |
+| application-mysql.properties           |  prod           | MySQL     |db/schema-mysql.sql                 |
+| application-liquibase-h2.properties    |  liquibase-h2   | H2-Memory |db/changelog/db.changelog-master.xml|
+| application-liquibase-mysql.properties |  liquibase-mysql| MySQL     |db/changelog/db.changelog-master.xml|
+
+
+The profile can be set in the file `application.properties`:
+
+```
+# Switch between dev and prod or liquibase-h2 and liquibase-mysql
+# dev = H2 database, prod = mysql database
+# liquibase profiles are not working after JPackage 
+spring.profiles.active=${STAGE:dev}
+```
+
+In the src/main/java/config folder is a `DataBaseBootstrap` class which
+saves at the first start a dummy project and a dummy task .
 
 ### Logging
 The app is creating a folder javafxspring in the user home directory.
@@ -130,9 +155,11 @@ If no logging file is required, just remove the rolling file appender:
    </root>
 ```
 
+![logging-to-user-home](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/app/logging-to-user-home.png)
+
 ## Build an installer for the MAC
 
-The command builds a dmg type setup for the MAC. The command jpackage must be accessbile from the command line.
+The commands build a dmg or pkg type setup for the MAC. The command jpackage must be accessbile from the command line.
 JPackage is part of the JDK14. Before starting make sure, there is no old
 dmg installer in the finder. If there is one, remove it by ejecting.
 
@@ -140,14 +167,79 @@ dmg installer in the finder. If there is one, remove it by ejecting.
  ./gradlew  -PinstallerType=dmg clean jpackage 
 ```
 
-or for more output use:
+```
+ ./gradlew  -PinstallerType=pkg clean jpackage 
+```
+
+or for more output use `--info`:
 
 ```
  ./gradlew --info -PinstallerType=dmg clean jpackage 
 ```
 
+The packaging through the badass-jlink-plugin uses the following tasks:
+
+- compileJava
+- processResources
+- classes
+- jar
+- prepareMergedJarsDir
+- createMergedModule
+- createDelegatingModules
+- prepareModulesDir
+- jlink
+- jpackageImage
+- jpackage
+
 
 The resulting file can be found under the folder build/jpackage.
+
+![dmg-in-JPackage.jpg](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/mac/dmg-in-JPackage.jpg)
+
+<br>
+
+Drag and drop the file to the desktop. The install symbol gets visible.
+
+
+![dmg](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/mac/dmg.png)
+
+## Build an installer for Windows
+
+The commands build a msi or exe type setup for the Windows 10 operating system. Make
+sure the Wit Toolset is already installed (download from https://wixtoolset.org/).
+The command jpackage must be accessbile from the command line.
+JPackage is part of the `JDK14`. Depending on the availabilty of `--win-per-user-install` in
+the `JPackage installerOptions` (`build.gradle`) the install path will be:
+
+- without `--win-per-user-install` -> install path `C:\Program Files\SpringBootJavaFx`
+- with    `--win-per-user-install` -> install path `C:\Users\<UserName>\AppData\Local\SpringBootJavaFx`
+
+```
+ gradlew  -PinstallerType=msi clean jpackage 
+```
+
+```
+ gradlew  -PinstallerType=exe clean jpackage 
+```
+<br>
+The resulting file can be found under build/JPackage.
+
+![windows-jpackage-structure](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/win/windows-jpackage-structure.png)
+
+<br>
+Drag and drop the installer file to the desktop. The install symbol gets visible.
+
+![msi-installer](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/win/msi-installer.png) &nbsp;&nbsp; ![setupexe](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/win/setupexe.png)
+
+<br>
+Start the installer. The application will be installed to the target folder (depending on `--win-per-user-install` )
+
+![destination-folder-with-win-per-user-install](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/win/destination-folder-with-win-per-user-install.png)
+
+<br>
+The installerOptions '--win-menu-group',"$appImageName"' provides an own window menu group:
+
+![windows-group](https://github.com/mbachmann/javafx-springboot-modular-jpackage-gradle-starter/raw/master/assets/win/windows-group.png)
 
 ## Verifying JLink
 
@@ -231,8 +323,6 @@ or
 open /Applications/SpringBootJavaFx.app/Contents/runtime/Contents/Home/bin/launcher
 ```
 
-#### Verifying the Windows Installer
-
 
 
 ### The Badass JLink Plugin
@@ -241,7 +331,7 @@ minimal effort. It also lets you create an application installer with the jpacka
 
 https://badass-jlink-plugin.beryx.org/releases/latest/#_jpackage
 
-Many modular applications have one or more non-modular dependencies, which are treated as automatic modules by the Java platform.  
+Many modular applications have one or more non-modular dependencies, which are treated as automatic modules by the Java platform.
 However, jlink cannot work with automatic modules.
 The plugin combines all non-modular dependencies into a single jar.
 This way, only the resulting merged module needs a module descriptor.
